@@ -12,12 +12,9 @@ module shader_tb;
 	
 	// output signals
 	logic done;
-	logic write_pixel;
+	logic [7:0] VGA_R, VGA_G, VGA_B;
+	logic 	   VGA_CLK, VGA_HS, VGA_VS, VGA_BLANK_n, VGA_SYNC_n;
 	
-	logic [15:0] x_pixel;
-	logic [15:0] y_pixel;
-	logic [7:0] R, G, B;
-
 	// shader dut
 	shader dut(.*);
 	

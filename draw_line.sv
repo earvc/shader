@@ -1,6 +1,7 @@
 module draw_line(input logic clk,
 					  input logic reset,
 					  input logic start,
+					  input logic bresenham_done,
 					  input logic [15:0] y_coord,
 					  input logic [15:0] pax, pay,
 					  input logic [15:0] pbx, pby,
@@ -8,10 +9,11 @@ module draw_line(input logic clk,
 					  input logic [15:0] pdx, pdy,
 					  
 					  output logic done,
-					  output logic [15:0] x_pixel, y_pixel
+					  output logic draw,
+					  output logic [10:0] start_x, end_x
 					  );
 	
-	typedef enum logic [6:0] {S0, S1, S2, S3, S4, S5, S6, S7} state_t;
+	typedef enum logic [8:0] {S0, S1, S2, S3, S4, S5, S6, S7, S8} state_t;
 	state_t state;
 	
 	
@@ -34,8 +36,8 @@ module draw_line(input logic clk,
 	logic done_div2;
 	
 	// two dividers required
-	divider14 div1(clk, rst_div, start_div, gradient1num, gradient1den, gradient1, done_div1);
-	divider14 div2(clk, rst_div, start_div, gradient2num, gradient2den, gradient2, done_div2);
+	divider14 div1(clk, reset, start_div, gradient1num, gradient1den, gradient1, done_div1);
+	divider14 div2(clk, reset, start_div, gradient2num, gradient2den, gradient2, done_div2);
 	
 	
 	always_ff @(posedge clk) begin
@@ -174,7 +176,7 @@ module draw_line(input logic clk,
 					//
 					//  At this point we have the gradients and have 
 					//  done the necessary pre-computation for
-					//  them. 
+					//  them. No we can calculate sx and ex
 					//
 					////////////////////////////////////////////////
 					
@@ -214,23 +216,33 @@ module draw_line(input logic clk,
 				S7: begin
 					if (sx > ex) begin
 						temp_x = sx;
-						x_pixel = ex >> 5;
-						y_pixel = temp_x >> 5;
+						start_x = ex >> 5;
+						end_x = temp_x >> 5;
 					end
 					
 					else begin
-						x_pixel = sx >> 5;
-						y_pixel = ex >> 5;
+						start_x = sx >> 5;
+						end_x = ex >> 5;
 					end
 					
-					done <= 1;
+					draw <= 1;
+					state <= S8;
 					
-					if (~start) begin
-						// wait until start is gone until we complete the sequence
+				end
+				
+				S8: begin
+					draw <= 0;
+					
+					if (bresenham_done) begin  // when bresenham is done
+						done <= 1;
+					end
+					
+					if (~start) begin  // wait until start is deasserted
 						done <= 0;
 						state <= S0;
-					end
+					end;
 				end
+				
 			endcase
 		end
 	end
