@@ -31,9 +31,9 @@ module VGA_LED(input logic      clk,
  state_t state;
  
 logic			 	start, done;
-logic [15:0]   v1x, v1y;
-logic [15:0]   v2x, v2y;
-logic [15:0]   v3x, v3y;
+logic [15:0]   v1x, v1y, v1z;
+logic [15:0]   v2x, v2y, v2z;
+logic [15:0]   v3x, v3y, v3z;
 
 shader shader_inst(.*);
 
