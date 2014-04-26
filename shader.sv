@@ -3,15 +3,27 @@
 module shader	  (input logic			 	clk,
 						input logic 			reset,
 						input logic			 	start,
-						input logic [15:0]   p1x, p1y,
-						input logic [15:0]   p2x, p2y,
-						input logic [15:0]   p3x, p3y,
+					
+						input logic [15:0]   v1x, v1y,
+						input logic [15:0]   v2x, v2y,
+						input logic [15:0]   v3x, v3y,
 				
 						output logic [7:0] VGA_R, VGA_G, VGA_B,
 						output logic 	    VGA_CLK, VGA_HS, VGA_VS, VGA_BLANK_n, VGA_SYNC_n,
 						output logic		 done
 						
 						);
+						
+	/////////////////////////////////
+	//
+	//  for sorting input vertices
+	//
+	/////////////////////////////////
+	
+
+	logic [15:0]   p1x, p1y;
+	logic [15:0]   p2x, p2y;
+	logic [15:0]   p3x, p3y;
 						
 	/////////////////////////////////
 	//
@@ -114,54 +126,121 @@ module shader	  (input logic			 	clk,
 		else begin
 			case (state)
 			
-				S0: begin  // calculate numerators and denominators for inverse slopes
+				S0: begin
 					done <= 0;
 					if (start) begin
-						if (p2y > p1y) begin
-							dp1p2num = p2x - p1x;
-							dp1p2den = p2y - p1y;
-						end
-						else begin	 // forces dp1p2 to 0
-							dp1p2num = 0;  
-							dp1p2den = 1;
+						
+						// sort incoming vertices
+						if ((v1y < v2y) & (v1y < v3y)) begin  // if V1 is the smallest vertex
+							p1x = v1x;  // first vertex is V1
+							p1y = v1y;
+							
+							if (v2y > v3y) begin  // if V2 is bigger than V3,
+								p2x = v3x;  // second vertex is V3
+								p2y = v3y;
+								
+								p3x = v2x;  // third vertex is V2
+								p3y = v2y;
+							end
+							
+							else begin  // if V3 is bigger than V2,
+								p2x = v2x;  // second vertex is V2
+								p2y = v2y;
+								
+								p3x = v3x;  // third vertex is V3
+								p3y = v3y;
+							end
 						end
 						
-						if (p3y > p1y) begin
-							dp1p3num = p3x - p1x;  
-							dp1p3den = p3y - p1y;
+						else if ((v2y < v1y) & (v2y < v3y)) begin  // if V2 is the largest vertex
+							p1x = v2x;  // first vertex is V2
+							p1y = v2y;
+							
+							if (v1y > v3y) begin  // if V1 is bigger than V3,
+								p2x = v3x;  // second vertex is V1
+								p2y = v3y;
+								
+								p3x = v1x;  // third vertex is V3
+								p3y = v1y;
+							end
+							
+							else begin  // if V2 is bigger than V1,
+								p2x = v1x;  // second vertex is V3
+								p2y = v1y;
+								
+								p3x = v3x;  // third vertex is V2
+								p3y = v3y;
+							end
 						end
-						else begin  // forces dp1p3 to 0
-							dp1p3num = 0;
-							dp1p3den = 1;
+						
+						else begin
+							p1x = v3x;  // first vertex is V2
+							p1y = v3y;
+							
+							if (v1y > v2y) begin  // if V1 is bigger than V3,
+								p2x = v2x;  // second vertex is V1
+								p2y = v2y;
+								
+								p3x = v1x;  // third vertex is V3
+								p3y = v1y;
+							end
+							
+							else begin  // if V2 is bigger than V1,
+								p2x = v1x;  // second vertex is V3
+								p2y = v1y;
+								
+								p3x = v2x;  // third vertex is V2
+								p3y = v2y;
+							end
 						end
-					
 						state <= S1;
 					end
 				end
 				
-				
-				S1: begin
-					start_div <= 1; // start the divide process
-					
-					if (done_div1 & done_div2) begin  // wait until the divides are done
-						state <= S2; 
-						start_div <= 0;
+				S1: begin  // calculate numerators and denominators for inverse slopes
+					if (p2y > p1y) begin
+						dp1p2num = p2x - p1x;
+						dp1p2den = p2y - p1y;
 					end
+					else begin	 // forces dp1p2 to 0
+						dp1p2num = 0;  
+						dp1p2den = 1;
+					end
+					
+					if (p3y > p1y) begin
+						dp1p3num = p3x - p1x;  
+						dp1p3den = p3y - p1y;
+					end
+					else begin  // forces dp1p3 to 0
+						dp1p3num = 0;
+						dp1p3den = 1;
+					end
+				
 					state <= S2;
 				end
 				
 				
 				S2: begin
+					start_div <= 1; // start the divide process
+					
+					if (done_div1 & done_div2) begin  // wait until the divides are done
+						state <= S3; 
+						start_div <= 0;
+					end
+				end
+				
+				
+				S3: begin
 					// at this point inverse slopes dp1p2 and dp1p3 are ready
 					start_y = p1y >> 5;
 					end_y = (p3y >> 5) + 1;
 					y_coord = start_y;
 					
-					state <= S3;
-				end  // end state S2				
+					state <= S4;
+				end 			
 				
 				
-				S3: begin
+				S4: begin  // sort vertices to be drawn for given y_coord
 					if ( (dp1p2num * dp1p3den) > (dp1p3num * dp1p2den) ) begin
 						if ( (y_coord << 5) < p2y) begin
 							pax = p1x;
@@ -209,26 +288,26 @@ module shader	  (input logic			 	clk,
 							pdy = p3y;
 						end
 					end
-					state <= S4;
-				end  // end state S3
+					state <= S5;
+				end
 				
 				
 				
-				S4: begin
+				S5: begin
 					start_draw <= 1; // draw current line
 					
 					if (draw_line_done) begin  		// wait until the draw is done before we change states
 						y_coord = y_coord + 1;  		// increment the y coordinate for next line to draw
 						start_draw <= 0;  				// make sure to set start_draw back to 0 when we're done
-						state <= S5;	
+						state <= S6;	
 					end
-				end  // end state S4
+				end 
 				
 			
-				S5: begin
+				S6: begin
 					
 					if (y_coord < end_y) begin
-						state <= S3;  			// jump back to S3 to draw the next line for new y_coord
+						state <= S4;  			// jump back to S3 to draw the next line for new y_coord
 					end
 					
 					else begin  // here we've finished shading the current triangle
