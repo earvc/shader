@@ -8,6 +8,8 @@ module shader	  (
 						input logic [15:0]   v1x, v1y, v1z,
 						input logic [15:0]   v2x, v2y, v2z, 
 						input logic [15:0]   v3x, v3y, v3z,
+						
+						input logic  [15:0]	pixel_color,
 				
 						output logic [7:0] VGA_R, VGA_G, VGA_B,
 						output logic 	    VGA_CLK, VGA_HS, VGA_VS, VGA_BLANK_n, VGA_SYNC_n,
@@ -62,7 +64,7 @@ module shader	  (
 	logic [15:0] pdx, pdy, pdz;
 	logic [15:0] y_coord;
 	logic [15:0] start_y, end_y;
-	logic [10:0] sx, ex;
+	logic [15:0] sx, ex;
 	logic draw_line_done;
 	
 	
@@ -71,16 +73,17 @@ module shader	  (
 	logic bresenham_start;
 	logic bresenham_done;
 	logic pixel_write;
-	logic pixel_color;
 	logic [10:0] pixel_x, pixel_y;
-	logic [10:0] z_coord;
+	logic [15:0] z_wire1, z_wire2, z_buff_wire;
+	
 	
 		draw_line draw( 
 								 .clk(clk), .reset(reset), .start(start_draw),
 								 .bresenham_done(bresenham_done), .y_coord(y_coord), 
 								 .pax(pax), .pay(pay), .paz(paz), .pbx(pbx), .pby(pby), .pbz(pbz),
 								 .pcx(pcx), .pcy(pcy), .pcz(pcz), .pdx(pdx), .pdy(pdy), .pdz(pdz),
-								 .done(draw_line_done), .draw(bresenham_start), .start_x(sx), .end_x(ex), .z_coord(z_coord)  
+								 .done(draw_line_done), .draw(bresenham_start), .start_x(sx), .end_x(ex),
+								 .zout1(z_wire1), .zout2(z_wire2) 
 							);
 	
 		
@@ -92,13 +95,14 @@ module shader	  (
 
 		put_pixel put_pixel_inst(
 										  .clk(clk), .reset(reset), .start(bresenham_start),
-										  .x0(sx), .y0(y_coord), .x1(ex), .y1(y_coord), .z_coord(z_coord),
-										  .plot(pixel_write), .x(pixel_x), .y(pixel_y), .done(bresenham_done)
+										  .x0(sx), .y0(y_coord), .x1(ex), .y1(y_coord),
+										  .plot(pixel_write), .x(pixel_x), .y(pixel_y), .done(bresenham_done),
+										  .z1(z_wire1), .z2(z_wire2), .z_out(z_buff_wire)
 										);
 	
 		VGA_framebuffer screen(
-										.clk50(clk), .reset(reset), .x(pixel_x), .y(pixel_y),
-										.pixel_color(pixel_color), .pixel_write(pixel_write),
+										.clk50(clk), .reset(reset), .x(pixel_x), .y(pixel_y), .z(z_buff_wire),
+										.pixel_color(pixel_color[1:0]), .pixel_write(pixel_write),
 										.VGA_R(VGA_R), .VGA_G(VGA_G), .VGA_B(VGA_B),
 										.VGA_CLK(VGA_CLK), .VGA_HS(VGA_HS), .VGA_VS(VGA_VS), .VGA_BLANK_n(VGA_BLANK_n), .VGA_SYNC_n(VGA_SYNC_n)
 									
@@ -131,7 +135,6 @@ module shader	  (
 		if (reset) begin
 			state <= S0;
 			done <= 0;
-			pixel_color <= 1;
 		end
 		
 		else begin

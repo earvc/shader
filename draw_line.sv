@@ -10,8 +10,8 @@ module draw_line(input logic clk,
 					  
 					  output logic done,
 					  output logic draw,
-					  output logic [10:0] start_x, end_x,
-					  output logic [10:0] z_coord
+					  output logic [15:0] zout1, zout2,
+					  output logic [15:0] start_x, end_x
 					  );
 	
 	typedef enum logic [8:0] {S0, S1, S2, S3, S4, S5, S6, S7, S8} state_t;
@@ -76,7 +76,6 @@ module draw_line(input logic clk,
 		temp_y = y_coord << 5;
 		if (reset) begin
 			state <= S0;
-			z_coord = 0;
 		end
 		
 		else begin
@@ -145,6 +144,10 @@ module draw_line(input logic clk,
 					if (done_int_z1 & done_int_z2 & done_int_ex & done_int_sx ) begin  // wait until the interpolations are done
 						
 						start_int <= 0; // deassert the interpolations
+						
+						// output z1 and z2 for z-buffer calculations
+						zout1 = z1;
+						zout2 = z2;
 						
 						if (sx > ex) begin
 							temp_x = sx;
