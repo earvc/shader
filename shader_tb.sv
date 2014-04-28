@@ -55,15 +55,15 @@ module shader_tb;
 	// input signals
 	initial begin
 		// face 25
-		v1x = 16'h2800;
-		v1y = 16'h1e00;
-		v1z = 16'h186;
-		v2x = 16'h27fa;
-		v2y = 16'h19d4;
-		v2z = 16'h186;
-		v3x = 16'h2d0c;
-		v3y = 16'h19fc;
-		v3z = 16'h186;
+		v1x = 16'h27fc;
+		v1y = 16'h1b5f;
+		v1z = 16'h178;
+		v2x = 16'h315f;
+		v2y = 16'h1b57;
+		v2z = 16'h178;
+		v3x = 16'h30a9;
+		v3y = 16'h1ab2;
+		v3z = 16'h17b;
 		
 		pixel_color <= 2'b01;
 		

@@ -2,7 +2,7 @@ module VGA_framebuffer(
  input logic 	    clk50, reset,
  input logic [10:0]  x,  // pixel x_coordinate
  input logic [10:0]  y,  // pixel y_coordinate
- input logic [10:0]  z,  // pixel z_coordinate
+ input logic [15:0]  z,  // pixel z_coordinate
  input logic [1:0]			pixel_color, 
  input logic			pixel_write,
  
@@ -74,15 +74,22 @@ module VGA_framebuffer(
 						( vcount[9] | (vcount[8:5] == 4'b1111) );
 			
 	
-	logic					framebuffer [307199:0];  // 640 x 480
+	logic	[1:0] 				framebuffer [307199:0];  // 640 x 480
+	logic [5:0]					zbuffer[307199:0];
 	logic	[18:0]		read_address, write_address;
 	
 	assign write_address = x + (y << 9) + (y << 7);
 	assign read_address = (hcount >> 1) + (vcount << 9) + (vcount << 7);
 	
-	logic 				pixel_read;
+	logic [1:0]				pixel_read;
 	always_ff @(posedge clk50) begin
-		if (pixel_write) framebuffer[write_address] <= pixel_color;
+		if (pixel_write) begin
+			if (z[5:0] >= zbuffer[write_address]) begin  // check z-buffer before update pixel
+				zbuffer[write_address] <= z[5:0];
+				framebuffer[write_address] <= pixel_color;
+			end
+		end
+	
 		if (hcount[0]) begin
 			pixel_read <= framebuffer[read_address];
 			VGA_BLANK_n <= ~blank;  // sync blank with read pixel data
@@ -90,7 +97,19 @@ module VGA_framebuffer(
 	end
 	
 	assign VGA_CLK = hcount[0];  // 25MHz clock
-	assign {VGA_R, VGA_G, VGA_B} = pixel_read ? 24'hFF_FF_FF : 24'h0;
+	
+	always_ff @(posedge clk50) begin
+		if (pixel_read == 2'b01) begin
+			{VGA_R, VGA_G, VGA_B} = 24'h87_ce_ee;
+		end
+		else if (pixel_read == 2'b10) begin
+			{VGA_R, VGA_G, VGA_B} = 24'h64_95_ed;
+		end
+		else begin
+			{VGA_R, VGA_G, VGA_B} = 24'h0;
+		end
+	end
+	
 endmodule
 	
 	

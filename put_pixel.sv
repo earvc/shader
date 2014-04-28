@@ -4,7 +4,8 @@ module put_pixel(input logic clk, reset,
 					  input logic [15:0] z1, z2,
 					  
 					  output logic plot,
-					  output logic [10:0] x, y, z_out,
+					  output logic [10:0] x, y,
+					  output logic [15:0] z_out,
 					  output logic done);
 	
 	typedef enum logic [6:0] {S0, S1, S2, S3, S4, S5, S6} state_t;
@@ -29,7 +30,8 @@ module put_pixel(input logic clk, reset,
 	logic start_int; 
 	logic done_int;
 	
-	interpolate interpolate_inst( .clk(clk), .start(start_int), .reset(reset), 
+	// higher resolution interpolate block
+	interpolate7 interpolate_inst( .clk(clk), .start(start_int), .reset(reset), 
 									    .min_val(z1), .max_val(z2), .gradient(gradient), 
 										 .done(done_int), .val(z_coord) );
 	
@@ -54,8 +56,16 @@ module put_pixel(input logic clk, reset,
 				end
 				
 				S1: begin
-					gradientnum = (x_coord << 5) - (x0 << 5);
-					gradientden = (x1 << 5) - (x0 << 5);
+					if (x1 == x0) begin // start x and end x are the same -> force gradient to 0
+						gradientnum = 0;
+						gradientden = 1;
+					end
+					
+					else begin
+						gradientnum = (x_coord << 5) - (x0 << 5);
+						gradientden = (x1 << 5) - (x0 << 5);
+					end
+					
 					start_div = 1;
 					
 					if(done_div) begin
@@ -66,8 +76,8 @@ module put_pixel(input logic clk, reset,
 				end
 				
 				S2: begin
-					if(~done_int) begin  // when interpolation for z is done
-						z_out = z_coord >> 5;  // send z out
+					if(done_int) begin  // when interpolation for z is done
+						z_out = z_coord;
 						start_int <= 0;
 						plot <= 1;
 						state <= S3;

@@ -74,7 +74,8 @@ module shader	  (
 	logic bresenham_done;
 	logic pixel_write;
 	logic [10:0] pixel_x, pixel_y;
-	logic [15:0] z_wire1, z_wire2, z_buff_wire;
+	logic [15:0] z_wire1, z_wire2; 
+	logic [15:0] z_buff_wire;
 	
 	
 		draw_line draw( 

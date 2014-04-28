@@ -66,10 +66,7 @@ module draw_line(input logic clk,
 	interpolate interpolate_z2( .clk(clk), .start(start_int), .reset(reset), 
 									    .min_val(pcz), .max_val(pdz), .gradient(gradient2), 
 										 .done(done_int_z2), .val(z2) );
-	
-	interpolate interpolate_z( .clk(clk), .start(start_int), .reset(reset), 
-									    .min_val(z1), .max_val(z2), .gradient(gradientz), 
-										 .done(done_int_z), .val(z) );
+
 	
 	
 	always_ff @(posedge clk) begin
