@@ -73,20 +73,27 @@ module shader	  (
 	logic pixel_write;
 	logic pixel_color;
 	logic [10:0] pixel_x, pixel_y;
+	logic [10:0] z_coord;
 	
 		draw_line draw( 
 								 .clk(clk), .reset(reset), .start(start_draw),
-								 .bresenham_done(bresenham_done), .y_coord(y_coord),
+								 .bresenham_done(bresenham_done), .y_coord(y_coord), 
 								 .pax(pax), .pay(pay), .paz(paz), .pbx(pbx), .pby(pby), .pbz(pbz),
 								 .pcx(pcx), .pcy(pcy), .pcz(pcz), .pdx(pdx), .pdy(pdy), .pdz(pdz),
-								 .done(draw_line_done), .draw(bresenham_start), .start_x(sx), .end_x(ex)  
+								 .done(draw_line_done), .draw(bresenham_start), .start_x(sx), .end_x(ex), .z_coord(z_coord)  
 							);
 	
 		
-		bresenham bresenham_inst( 
+//		bresenham bresenham_inst( 
+//										  .clk(clk), .reset(reset), .start(bresenham_start),
+//										  .x0(sx), .y0(y_coord), .x1(ex), .y1(y_coord),
+//										  .plot(pixel_write), .x(pixel_x), .y(pixel_y), .done(bresenham_done) 
+//										);
+
+		put_pixel put_pixel_inst(
 										  .clk(clk), .reset(reset), .start(bresenham_start),
-										  .x0(sx), .y0(y_coord), .x1(ex), .y1(y_coord),
-										  .plot(pixel_write), .x(pixel_x), .y(pixel_y), .done(bresenham_done) 
+										  .x0(sx), .y0(y_coord), .x1(ex), .y1(y_coord), .z_coord(z_coord),
+										  .plot(pixel_write), .x(pixel_x), .y(pixel_y), .done(bresenham_done)
 										);
 	
 		VGA_framebuffer screen(

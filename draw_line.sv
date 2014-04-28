@@ -10,7 +10,8 @@ module draw_line(input logic clk,
 					  
 					  output logic done,
 					  output logic draw,
-					  output logic [10:0] start_x, end_x
+					  output logic [10:0] start_x, end_x,
+					  output logic [10:0] z_coord
 					  );
 	
 	typedef enum logic [8:0] {S0, S1, S2, S3, S4, S5, S6, S7, S8} state_t;
@@ -75,6 +76,7 @@ module draw_line(input logic clk,
 		temp_y = y_coord << 5;
 		if (reset) begin
 			state <= S0;
+			z_coord = 0;
 		end
 		
 		else begin
@@ -141,135 +143,29 @@ module draw_line(input logic clk,
 					start_int <= 1; // start all interpolations
 					
 					if (done_int_z1 & done_int_z2 & done_int_ex & done_int_sx ) begin  // wait until the interpolations are done
+						
+						start_int <= 0; // deassert the interpolations
+						
+						if (sx > ex) begin
+							temp_x = sx;
+							start_x = ex >> 5;
+							end_x = temp_x >> 5;
+						end
+					
+						else begin
+							start_x = sx >> 5;
+							end_x = ex >> 5;
+						end
+						
+						draw <= 1;
 						state <= S3;
 					end
-				
-//					///////////////////////////////////////////////////
-//					//
-//					//  Precomputation for interpolation
-//					//
-//					///////////////////////////////////////////////////
-//					
-//					temp_product11 = (pbx - pax) * gradient1;  // result is in Q.19 format
-//					temp_product21 = (pdx - pcx) * gradient2;  // result is in Q.19 format
-//					
-//					state <= S3;
 				end
 				
 				
 				S3: begin  // figure out temp_product for gradient1
 					
-					
-					
-//					if (temp_product11[31]) begin
-//						temp_product12 = ~(temp_product11 - 1); // get magnitude of temp_product if negative
-//						state <= S4;  // one last step for processing
-//					end
-//					
-//					else begin
-//						temp_product12 = temp_product11;
-//						state <= S4;
-//					end
-					
-				end
-				
-				S4: begin  // figure out temp+product for gradient2
-					
-//					if (temp_product21[31]) begin
-//						temp_product22 = ~(temp_product21 - 1); // get magnitude of temp_product negative
-//						state <= S5;
-//					end
-//					
-//					else begin
-//						temp_product22 = temp_product21;
-//						state <= S5;
-//					end
-				end
-				
-				S5: begin  // final step for pre-computation for sx and ex
-					
-//					if (temp_product11[31]) begin  // if the temp_product is negative
-//						temp_product12 = ~(temp_product12 >> 14) + 1;  // need to convert final result to 2s complement
-//					end
-//					
-//					else begin
-//						temp_product12 = (temp_product12 >> 14);  // otherwise just shift
-//					end
-//					
-//					
-//					if (temp_product21[31]) begin
-//						temp_product22 = ~(temp_product22 >> 14) + 1;
-//					end
-//					
-//					else begin
-//						temp_product22 = (temp_product22 >> 14);
-//					end
-//					
-//					state <= S6;
-				end  // send state S5
-				
-				
-				S6: begin
-				
-					////////////////////////////////////////////////
-					//
-					//  At this point we have the gradients and have 
-					//  done the necessary pre-computation for
-					//  the sx and ex. No we can calculate sx and ex
-					//
-					////////////////////////////////////////////////
-					
-					// gradient 1 clamp
-					
-//					if (gradient1[15]) begin  // gradient1 < 0
-//						sx = pax;  // gradient1 = 0;
-//					end
-//					
-//					else if ( (gradient1 >> 14) >= 1) begin
-//						sx = pax + (pbx - pax); // gradient1 = 1;
-//					end
-//					
-//					else begin
-//						sx = pax + temp_product12;
-//					end
-//					
-//					
-//					// gradient2 clamp
-//					
-//					if (gradient2[15]) begin    // gradient2 < 0
-//						ex = pcx; // gradient2 = 0;
-//					end
-//					
-//					else if ( (gradient2 >> 14) >= 1) begin
-//						ex = pcx + (pdx - pcx);  // gradient2 = 1;
-//					end
-//					
-//					else begin
-//						ex = pcx + temp_product22;
-//					end
-					
-//					state <= S7;
-					
-				end
-				
-				S7: begin
-					if (sx > ex) begin
-						temp_x = sx;
-						start_x = ex >> 5;
-						end_x = temp_x >> 5;
-					end
-					
-					else begin
-						start_x = sx >> 5;
-						end_x = ex >> 5;
-					end
-					
-					draw <= 1;
-					state <= S8;
-					
-				end
-				
-				S8: begin
+					// at this point we have sx, ex, z1 and z2. need to calculate gradients for z
 					draw <= 0;
 					
 					if (bresenham_done) begin  // when bresenham is done
