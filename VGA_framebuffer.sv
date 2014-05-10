@@ -9,6 +9,9 @@ module VGA_framebuffer(
  output logic [7:0] VGA_R, VGA_G, VGA_B,
  output logic 	    VGA_CLK, VGA_HS, VGA_VS, VGA_BLANK_n, VGA_SYNC_n);
 
+ 
+ 
+ 
 /*
  * 640 X 480 VGA timing for a 50 MHz clock: one pixel every other cycle
  * 
@@ -75,7 +78,6 @@ module VGA_framebuffer(
 			
 	
 	logic	[1:0] 				framebuffer [307199:0];  // 640 x 480
-	logic [5:0]					zbuffer[307199:0];
 	logic	[18:0]		read_address, write_address;
 	
 	assign write_address = x + (y << 9) + (y << 7);

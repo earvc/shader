@@ -31,7 +31,7 @@ module put_pixel(input logic clk, reset,
 	logic done_int;
 	
 	// higher resolution interpolate block
-	interpolate7 interpolate_inst( .clk(clk), .start(start_int), .reset(reset), 
+	interpolate interpolate_inst( .clk(clk), .start(start_int), .reset(reset), 
 									    .min_val(z1), .max_val(z2), .gradient(gradient), 
 										 .done(done_int), .val(z_coord) );
 	
