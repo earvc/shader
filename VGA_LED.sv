@@ -34,6 +34,7 @@ logic			 	start, done;
 logic [15:0]   v1x, v1y, v1z;
 logic [15:0]   v2x, v2y, v2z;
 logic [15:0]   v3x, v3y, v3z;
+logic [15:0]   pixel_color;
 
 shader shader_inst(.*);
 
@@ -42,27 +43,52 @@ shader shader_inst(.*);
 
    always_ff @(posedge clk)
 	  if (reset) begin
-//			p1x <= 16'h904;
-//			p1y <= 16'hb77;
-//			
-//			p2x <= 16'h19ce;
-//			p2y <= 16'hf9c;
-//			
-//			p3x <= 16'h6e9;
-//			p3y <= 16'h238f;
+			v1x <= 16'h0;
+			v1y <= 16'h0;
+			
+			v2x <= 16'h0;
+			v2y <= 16'h0;
+			
+			v3x <= 16'h0;
+			v3y <= 16'h0;
 			
 			state <= S0;
 			start <= 1;
 		end
-     else if (chipselect && write)
+     else if (chipselect && write) begin
        case (address)
+//			8'd0 : v1x <= 16'h904;
+//			8'd1 : v1y <= 16'h904;
+//			8'd2 : v2x <= 16'h19ce;
+//			8'd3 : v2y <= 16'hf9c;
+//			8'd4 : v3x <= 16'h6e9;
+//			8'd5 : v3y <= 16'h238f;
+			
+			
 			8'd0 : v1x <= writedata;
 			8'd1 : v1y <= writedata;
 			8'd2 : v2x <= writedata;
 			8'd3 : v2y <= writedata;
 			8'd4 : v3x <= writedata;
 			8'd5 : v3y <= writedata;
+			8'd6 : begin 
+					pixel_color <= writedata;
+					state <= S0;
+					start<= 1;
+			
+			
+//			8'd0 : v1x <= writedata;
+//			8'd1 : v1y <= writedata;
+//			8'd2 : v2x <= writedata;
+//			8'd3 : v2y <= writedata;
+//			8'd4 : v3x <= writedata;
+//			8'd5 : begin 
+//					v3y <= writedata;
+//					state <= S0;
+//					start<= 1;
+			end
        endcase
+	 end
 	
 	  else begin
 			 case (state)

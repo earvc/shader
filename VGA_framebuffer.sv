@@ -2,16 +2,13 @@ module VGA_framebuffer(
  input logic 	    clk50, reset,
  input logic [10:0]  x,  // pixel x_coordinate
  input logic [10:0]  y,  // pixel y_coordinate
- input logic [15:0]  z,  // pixel z_coordinate
- input logic [1:0]			pixel_color, 
+ input logic [15:0]   z,  // pixel z_coordinate
+ input logic [15:0]			pixel_color, 
  input logic			pixel_write,
  
  output logic [7:0] VGA_R, VGA_G, VGA_B,
  output logic 	    VGA_CLK, VGA_HS, VGA_VS, VGA_BLANK_n, VGA_SYNC_n);
 
- 
- 
- 
 /*
  * 640 X 480 VGA timing for a 50 MHz clock: one pixel every other cycle
  * 
@@ -77,20 +74,74 @@ module VGA_framebuffer(
 						( vcount[9] | (vcount[8:5] == 4'b1111) );
 			
 	
-	logic	[1:0] 				framebuffer [307199:0];  // 640 x 480
+	logic	[1:0] 		framebuffer [307199:0];  // 640 x 480
 	logic	[18:0]		read_address, write_address;
 	
 	assign write_address = x + (y << 9) + (y << 7);
 	assign read_address = (hcount >> 1) + (vcount << 9) + (vcount << 7);
 	
+	
+	/************************************************************
+	*
+	*
+	*		Pixel write code using z-buffering
+	*
+	*
+	*************************************************************/
+	
+	logic zbuffer_clear, zbuffer_write;
+	logic  [7:0] zbuffer_rdata;
+	logic [18:0] zbuffer_address;
+	logic write_fb;
+	
+	zbuffer zbuffer_shader (.aclr(zbuffer_clear), .address(zbuffer_address), 
+				.clock(clk50), .data(z), .wren(zbuffer_write), 
+				.q(zbuffer_rdata));
+	
+	typedef enum logic [2:0] {S0, S1, S2} state_t;
+	state_t state;
+	
+	always_ff @ (posedge clk50) begin
+		if (reset) begin
+			zbuffer_clear <= 0;
+			state <= S0;
+		end
+		
+		else begin
+			case (state) 
+				S0: begin
+					if (pixel_write) begin
+						zbuffer_address <= write_address;  // check the current z value of the pixel you want to write
+						state <= S1;
+					end
+				end
+				
+				S1: begin
+					/*if (zbuffer_rdata <= z) begin // if current z is less than new z
+						write_fb <= 1;  				// write pixel to frame buffer
+						zbuffer_write <= 1;  		// write new value to z-buffer
+						state <= S2;
+					end */
+					
+					write_fb <= 1;  				// write pixel to frame buffer
+					zbuffer_write <= 1;  		// write new value to z-buffer
+					state <= S2;
+				end
+				
+				S2: begin
+					// cleanup signals
+					write_fb <= 0;
+					zbuffer_write <= 0;
+					state <= S0;
+				end
+			endcase
+		end
+	end
+	
+	
 	logic [1:0]				pixel_read;
 	always_ff @(posedge clk50) begin
-		if (pixel_write) begin
-			if (z[5:0] >= zbuffer[write_address]) begin  // check z-buffer before update pixel
-				zbuffer[write_address] <= z[5:0];
-				framebuffer[write_address] <= pixel_color;
-			end
-		end
+		if (write_fb) framebuffer[write_address] <= 2'b01;
 	
 		if (hcount[0]) begin
 			pixel_read <= framebuffer[read_address];
@@ -102,10 +153,13 @@ module VGA_framebuffer(
 	
 	always_ff @(posedge clk50) begin
 		if (pixel_read == 2'b01) begin
-			{VGA_R, VGA_G, VGA_B} = 24'h87_ce_ee;
+			{VGA_R, VGA_G, VGA_B} = {pixel_color, pixel_color, 8'hff};
 		end
-		else if (pixel_read == 2'b10) begin
-			{VGA_R, VGA_G, VGA_B} = 24'h64_95_ed;
+		else if (pixel_read == 2'b10) begin  // medium
+			{VGA_R, VGA_G, VGA_B} = {pixel_color, pixel_color, 8'hff};
+		end
+		else if (pixel_read == 2'b11) begin  // dark
+			{VGA_R, VGA_G, VGA_B} = {pixel_color, pixel_color, 8'hff};
 		end
 		else begin
 			{VGA_R, VGA_G, VGA_B} = 24'h0;

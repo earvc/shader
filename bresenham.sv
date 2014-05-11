@@ -41,6 +41,7 @@ module bresenham(input logic clk, reset,
 			end 
 			else begin
 				plot <= 1;
+					
 				e2 = err << 1;
 				
 				if (e2 > dy) begin

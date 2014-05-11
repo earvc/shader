@@ -51,7 +51,7 @@ module interpolate7 ( input logic clk,
 		
 		
 		
-				S2: begin  // shift to get Q.5
+				S2: begin  // shift to get Q.11
 					if (temp_product[31]) begin
 						product = ~(product >> 14) + 1;
 					end
@@ -64,17 +64,19 @@ module interpolate7 ( input logic clk,
 				
 				
 				S3: begin
+				
+					// clamps gradient between 0 and 1
 			
 					if (gradient[15]) begin  // gradient < 0
-						val = (min_val) << 1;  // gradient = 0;  // result is Q.6
+						val = (min_val); 
 					end
 					
 					else if ( (gradient >> 14) >= 1) begin
-						val = (min_val + (max_val - min_val)) << 1; // gradient = 1;
+						val = (min_val + (max_val - min_val)); // gradient = 1;
 					end
 					
 					else begin
-						val = (min_val + product) << 1;
+						val = (min_val + product);
 					end
 					
 					done <= 1;  // we're done!

@@ -31,8 +31,8 @@ module put_pixel(input logic clk, reset,
 	logic done_int;
 	
 	// higher resolution interpolate block
-	interpolate interpolate_inst( .clk(clk), .start(start_int), .reset(reset), 
-									    .min_val(z1), .max_val(z2), .gradient(gradient), 
+	interpolate7 interpolate_inst( .clk(clk), .start(start_int), .reset(reset), 
+									    .min_val(z1 << 2), .max_val(z2 << 2), .gradient(gradient), 
 										 .done(done_int), .val(z_coord) );
 	
 	
@@ -77,7 +77,7 @@ module put_pixel(input logic clk, reset,
 				
 				S2: begin
 					if(done_int) begin  // when interpolation for z is done
-						z_out = z_coord;
+						z_out <= z_coord;
 						start_int <= 0;
 						plot <= 1;
 						state <= S3;

@@ -75,7 +75,7 @@ module shader	  (
 	logic pixel_write;
 	logic [10:0] pixel_x, pixel_y;
 	logic [15:0] z_wire1, z_wire2; 
-	logic [15:0] z_buff_wire;
+	logic [15:0]  z_buff_wire;
 	
 	
 		draw_line draw( 
@@ -103,7 +103,7 @@ module shader	  (
 	
 		VGA_framebuffer screen(
 										.clk50(clk), .reset(reset), .x(pixel_x), .y(pixel_y), .z(z_buff_wire),
-										.pixel_color(pixel_color[1:0]), .pixel_write(pixel_write),
+										.pixel_color(pixel_color), .pixel_write(pixel_write),
 										.VGA_R(VGA_R), .VGA_G(VGA_G), .VGA_B(VGA_B),
 										.VGA_CLK(VGA_CLK), .VGA_HS(VGA_HS), .VGA_VS(VGA_VS), .VGA_BLANK_n(VGA_BLANK_n), .VGA_SYNC_n(VGA_SYNC_n)
 									

@@ -143,7 +143,7 @@ module draw_line(input logic clk,
 						start_int <= 0; // deassert the interpolations
 						
 						// output z1 and z2 for z-buffer calculations
-						zout1 = z1;
+						zout1 = z1; 
 						zout2 = z2;
 						
 						if (sx > ex) begin
